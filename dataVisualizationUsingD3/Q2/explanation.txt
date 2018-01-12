@@ -1,0 +1,1 @@
+1. I scale the radii linearly. The reason for this is that the degree of node decide how many lines that link to a cirtain node, which can be a linear relation to the circumference, where is linear to radii.   

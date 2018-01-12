@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<title>xyang368</title>
+<script src="../lib/d3.v3.min.js"></script>
+<script src="../lib/topojson.v1.min.js"></script>
+<script src="../lib/d3.tip.v0.6.3.js"></script>
+<script src="../lib/d3-queue.v3.min.js"></script>
+<!-- <link rel = "stylesheet" href="q7.css"> -->
+<style>
+    .tip {
+        line-height: 1;
+        padding: 12px;
+        background: rgba(0, 0, 0, 0.8);
+        color: #fff;
+        border-radius: 2px;
+        font-size: 12px;
+    }
+</style>
+
+
+<body>
+	<svg width="960" height="600"></svg>
+	<script>
+		var svg = d3.select("svg"),
+    		width = +svg.attr("width"),
+    		height = +svg.attr("height");
+
+    	var path = d3.geo.path();
+    	var tip = d3.tip()
+    				.attr('class','tip');
+
+    	var colorRange = ['#b5aee5'	,'#a299de'	, '#8e84d7'	, '#7b6fcf'	, '#685ac8'	 , '#5646c0', '#4b3cad'	, '#423597'	,'#392e82']
+    	var colorScale = d3.scale.quantile().range(colorRange);
+
+
+    	d3.queue()
+            .defer(d3.json, "median_earnings.json")
+            .defer(d3.json, "us.json")
+            .defer(d3.csv, "median_ages.csv")
+            .await(ready);
+
+    	//generate us map using topo
+
+    
+    	function ready(error,earning,us,age) {
+
+    		var states = d3.nest()
+    					.key(function(d) {return d.id;})
+    					.entries(age);
+
+    		var earningMin = d3.min(earning, function(d) {return d.median_earnings;});
+
+    		var earningMax = d3.max(earning, function(d) {return d.median_earnings;});
+
+    		var earningMap = d3.map(earning, function(d) {return d.id;});
+
+    		var ageMap = d3.map(states, function(d) {return d.key;});
+
+    		colorScale.domain(d3.range(earningMin,earningMax,8));
+
+    		tip.html(function(d) 
+    		{
+    			ageMap.get(d.id).values.sort(function(x,y) {
+    				x.median_age=+x.median_age;
+    				y.median_age=+y.median_age;
+    				return d3.ascending(x.median_age,y.median_age);
+    			});
+
+    			var stateName = "";
+
+    			for (i = 0; i < ageMap.get(d.id).values.length; i++) {
+
+    				if (i >= 5) {
+    					break;
+    				}
+
+    				else {
+    					stateName += ageMap.get(d.id).values[i].name + ' (Age:'+ageMap.get(d.id).values[i].median_age+")<br\>";
+    				}
+    				
+    			} 
+    			return stateName;
+    		})
+
+    		svg.call(tip);
+    		svg.append("g")
+                .attr("class", "states")
+                .selectAll("path")
+                .data(topojson.feature(us, us.objects.states).features)
+                .enter()
+                .append("path")
+                .attr("id", function (d) {
+                    return d.id;
+                })
+                .attr("fill", function (d) {
+                    return colorScale(earningMap.get(d.id).median_earnings)
+                })
+                .attr('d',path)
+                .on('mouseover',tip.show)
+                .on('mouseout',tip.hide);
+   	
+    	
+    	//-----------------------add legend to the plot
+
+    		var legend = svg.selectAll('.legend')
+                            .data(colorScale.quantiles())
+                            .enter()
+            				.append('g')
+            				.attr('class','legend');
+
+            legend.append('rect')
+            	.attr('x',0)
+            	.attr('transform',function(d,i){return "translate("+(width-20)+','+(10+i*20)+')';})
+            	.attr('width',20)
+            	.attr('height',20)
+            	.style('fill',function(d,i) {return colorRange[i]});
+
+  
+
+            legend.append('text')
+                .text(function (d, i) {
+                    return Math.round(d);
+                })
+                .attr('y',function(d,i) {return (25+i*20);})
+                .attr('x',width-55)
+                .attr("font-family", "sans-serif")
+                .attr("font-size", 12);
+
+	}
+
+	</script>
+</body>

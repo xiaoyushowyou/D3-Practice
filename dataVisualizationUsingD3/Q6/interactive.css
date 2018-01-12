@@ -1,0 +1,36 @@
+	#yaxis text {
+			font-size: 14px;
+		}
+
+		.xaxis2 path,
+		.xaxis2 line {
+			fill: none;
+			stroke: grey;
+			stroke-width: 1;
+			shape-rendering: crispEdges;
+		}
+
+		.yaxis2 path,
+		.yaxis2 line {
+			fill: none;
+			stroke: grey;
+			stroke-width: 1;
+			shape-rendering: crispEdges;
+		}
+
+		path {
+			stroke: green;
+			stroke-width: 2;
+			fill: none;
+		}
+
+		#yaxis path {
+			display: none;
+		}
+
+		.axis path,
+		.axis line {
+			fill: none;
+			stroke: #000;
+			shape-rendering: crispEdges;
+		}

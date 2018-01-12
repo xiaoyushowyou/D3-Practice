@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <title>xyang368</title>
+        <script type="text/javascript" src="../lib/d3.v3.min.js"></script>
+        <link rel = "stylesheet" href="heatmap.css">
+    </head>
+
+    <body>	
+        <form>
+                <lable for = "season">SEASON:</lable>
+                <select id = "season"></select>
+        </form>
+
+        <script type="text/javascript">
+
+        	var margin = {top: 20, right: 20, bottom: 100, left: 100};
+        	var width = 500;
+        	var height = 400;
+            var padding = 40;
+
+        	d3.csv("heatmap.csv", function(error, data) {
+				if (error) throw error;
+				data.forEach(function(d) {
+					d.Baratheon = +d.Baratheon;
+					d.Greyjoy = +d.Greyjoy;
+					d.Lannister = +d.Lannister;
+					d.Martell = +d.Martell;
+					d.Stark = +d.Stark;
+					d.Targaryen = +d.Targaryen;
+					d.Tyrell = +d.Tyrell;
+					d.episode = +d.episode;
+					d.season = +d.season;
+				});
+
+
+        	//console.log(data);
+
+
+
+            var season_elements = d3.set(data.map(function(item) {return item.season})).values();
+            //console.log(season_elements);
+
+            d3.select("#season")
+                .on("change", onchange)
+                .selectAll("option")
+                .data(season_elements)
+                .enter()
+                .append("option")
+                .attr("value", function(d) { return d; })
+                .text(function(d) { return d; });
+
+            //initial plot where season = 1
+            var w = width - margin.left -margin.right;
+            var h = height - margin.top - margin.bottom;
+
+
+            var svg = d3.select("body")
+                    .append("svg")
+                    .attr("width",width)
+                    .attr("height",height)
+                    .append("g");
+
+            svg.append('text')
+              .attr('x',width/3)
+              .attr('text-anchor','mid')
+              .attr('y',11)
+              .text('A visualization of Ice and Fire')
+
+
+            myData = [];
+            data.forEach(function(d) {
+                if (d.season == 1) {
+                    myData.push(d);
+                }
+            });
+
+            var x_elements = d3.set(data.map(function(item) {return item.episode;})).values();
+            var y_elements = d3.keys(data[0]).slice(0,7);
+
+            var x = d3.scale.ordinal().rangeBands([0, w]),
+                y = d3.scale.ordinal().rangeBands([h, 0]),
+                z = d3.scale.quantile().range(['#ffffe0','#d4e5b7','#adc897','#8eab83','#768b7d','#656a86','#514692','#342392','#000080']);
+
+            var xStep = 1,
+                yStep = 1;
+
+            bucket = [];
+            maxTemp = [];
+            myNewObj = [];
+
+            myData.forEach(function(d){
+                temp = [];
+                for (i = 0; i < y_elements.length; i++) {
+                    var key = y_elements[i];
+                    temp.push(d[key]);
+                    myNewObj.push({'episode':d.episode,'family':key,'value':d[key]});
+                }
+                bucket.push(temp);
+                maxTemp.push(d3.max(temp.slice(0,7)));
+               // console.log(maxTemp);
+            })
+
+            var myMax = d3.max(maxTemp);
+            console.log(myMax);
+
+            x.domain(x_elements.map(function(d) {return d;}));
+            y.domain(y_elements.map(function (d) {return d;}));        
+            z.domain([0,myMax]);
+         
+            //initialize axix
+            xAxis = d3.svg.axis()
+                          .scale(x)
+                          .orient('bottom');
+
+            yAxis = d3.svg.axis()
+                          .scale(y)
+                          .orient('left');
+
+            //create x axis
+            svg.append('g')
+               .attr('class','x axis')
+               .call(xAxis)
+               .attr("transform","translate("+margin.left+','+(height-margin.bottom)+")")
+              
+            //add x text label   
+            svg.append("text")
+               .attr('class','label')
+               .attr('x',width-30)
+               .attr('y',height-margin.bottom+40)
+               .attr('text-anchor','end')
+               .text('EPISODE');
+
+            //create y axis
+            svg.append('g')
+                .attr('class','y axis')
+                .call(yAxis)
+                .attr("transform","translate("+margin.left+','+margin.top+")");
+
+            //add y text label   
+            svg.append("text")
+               .attr('class','label')
+               .attr('x',margin.left-10)
+               .attr('front-size','10px')
+               .attr('y',margin.top)
+               .attr('text-anchor','end')
+               .text('FAMILY');
+
+
+            //--------------------------------------------
+            //Display results
+            var tempSVG = svg.selectAll(".Count")
+                .data(myNewObj)
+
+                tempSVG.enter()
+                .append("rect")
+                .attr("class","Count")
+                .attr("width",x(2)-x(1)-2)
+                .attr("height",y(y_elements[1])-y(y_elements[2])-2)
+                .attr("x",function(d) {return (margin.left+x(d.episode));})
+                .attr("y",function(d){return (margin.top+y(d.family));})
+                .style("fill",function(d) {return z(d.value);});
+
+
+            //add a legend for the color values
+            var legendLable = [0].concat(z.quantiles());
+
+            var legend = svg.selectAll('.legend')
+                            .data(legendLable);
+
+
+
+            legend.enter()
+            .append('g')
+            .attr('class','legend')
+            .attr('transform',function(d,i){return "translate("+(150+i*20)+','+(h+50)+')';});
+
+
+            legend.append('rect')
+                  .attr('width',20)
+                  .attr('height',20)
+                  .style('fill',function(d,i) {return z.range()[i];}); //return z.range()[i];}); //return z.range(i);});
+
+            legend.append('text')
+                .attr('x',-10)
+                .attr('y',35)
+                .attr('dx','.25em')
+                .text(function(d,i) {return d3.round(legendLable[i]);});
+
+
+            legend.append('text')
+                .data([0])
+                .attr('x',0)
+                .attr('y',50)
+                .text('No of Appearance');
+   
+            function onchange() {
+                seasonValue = d3.select('select')
+                                .property('value')
+                console.log(seasonValue);
+
+            //update the data based on session
+                myData = [];
+
+                data.forEach(function(d) {
+                    if (d.season == seasonValue) {
+                        myData.push(d);
+                    }
+                });
+
+                redraw();    
+                
+            };
+
+            
+            function redraw() {
+
+                bucket = [];
+                maxTemp = [];
+                myNewObj = [];
+
+                myData.forEach(function(d){
+                temp = [];
+                for (i = 0; i < y_elements.length; i++) {
+                    var key = y_elements[i];
+                    temp.push(d[key]);
+                    myNewObj.push({'episode':d.episode,'family':key,'value':d[key]});
+                }
+                bucket.push(temp);
+                maxTemp.push(d3.max(temp.slice(0,7)));
+                //console.log(maxTemp);
+            })
+
+            var myMax = d3.max(maxTemp);
+            console.log(myMax);
+            //console.log(myNewObj)
+           
+            z.domain([0,myMax]);
+         
+            //--------------------------------------------
+
+            //clean previous results
+            svg.selectAll('.Count').remove();
+            svg.selectAll('.legend').remove();
+
+
+            //Display results
+            var tempSVG = svg.selectAll(".Count")
+                .data(myNewObj)
+
+                tempSVG.enter()
+                .append("rect")
+                .attr("class","Count")
+                .attr("width",x(2)-x(1)-2)
+                .attr("height",y(y_elements[1])-y(y_elements[2])-2)
+                .attr("x",function(d) {return (margin.left+x(d.episode));})
+                .attr("y",function(d){return (margin.top+y(d.family));})
+                .style("fill",function(d) {return z(d.value);});
+
+
+            // //add a legend for the color values
+            var legendLable = [0].concat(z.quantiles());
+
+            var legend = svg.selectAll('.legend')
+                            .data(legendLable);
+
+            legend.enter()
+
+            .append('g')
+            .attr('class','legend')
+            .attr('transform',function(d,i){return "translate("+(150+i*20)+','+(h+50)+')';});
+
+            legend.append('rect')
+                  .attr('width',20)
+                  .attr('height',20)
+                  .style('fill',function(d,i) {return z.range()[i];});
+
+            legend.append('text')
+                .attr('x',-10)
+                .attr('y',35)
+                .attr('dx','.25em')
+                .text(function(d,i) {return d3.round(legendLable[i]);});
+        	};
+
+        });
+</script>
+</body>

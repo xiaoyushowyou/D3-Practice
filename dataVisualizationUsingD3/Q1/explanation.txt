@@ -1,0 +1,4 @@
+1. I delete several columns that are empty. In addtion, due to all the data is for 2012, to reduce repetation, the column of year is also deleted;
+2. Remove repetation;
+3. Put whitespace to make data from various groups clearer;
+4. Left align text and right align numbers to make the table more readable. 

@@ -1,0 +1,2 @@
+1. With linear scale of both x and y axis, the plasma_glucose vs insulin is better to sperate the class, where negative results distributed in the top left and the positive results distributed in the bottom right. 
+2. Compared to square root scale, log scale is much better to seperate negative and positive classes. 

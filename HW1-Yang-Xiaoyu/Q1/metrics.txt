@@ -1,0 +1,6 @@
+1. Average nodes degree = 1.056  
+Represent the average degree of all the nodes. For each node, the degree represent how many nodes it connects to. 
+2. Diameter of the graph = 4
+Represent the longset graph distances between any two nodes in the graph. Otherwords, represent how far apart are the two most distant nodes. 
+3. Average path length = 2.929
+The average graph-distance between all pairs of nodes. 

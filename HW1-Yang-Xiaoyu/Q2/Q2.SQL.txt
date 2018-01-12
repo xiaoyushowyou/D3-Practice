@@ -1,0 +1,129 @@
+-- initial commands
+.headers off
+.separator ','
+
+-- (a) Import data
+-- [insert sql statement(s) below]
+create table flights(airline text, flight_number integer, origin_airport text, destination_airport text, departure_delay integer, distance integer, arrival_delay integer);
+.import flights.csv flights
+
+create table airports(airport_code text, airport text, city text, state text, latitude real, longitude real);
+.import airports.csv airports
+
+create table airlines(airline_code text, airline text);
+.import airlines.csv airlines
+
+
+-- (b) Build indexes
+-- [insert sql statement(s) below]
+create index flights_airline_index on flights(airline);
+create index flights_origin_index on flights(origin_airport);
+create index flights_destination_airport_index on flights(destination_airport);
+create index airport_airport_index on airports(airport_code);
+create index airlines_alrline_index on airlines(airline_code);
+
+
+-- (c) Quick computations.
+-- [insert sql statement(s) below]
+select count(*) from flights 
+where destination_airport = 'SEA' and arrival_delay > 20;
+
+select count(*) from flights
+where origin_airport = 'SFO' and departure_delay > 20;
+
+select '';
+
+-- (d) Average delay of flights per airline 
+-- [insert sql statement(s) below]
+
+select airlines.airline, avg(arrival_delay) from airlines, flights
+where
+airlines.airline_code =  flights.airline
+group by airline_code
+order by avg(arrival_delay) desc
+limit 5; 
+
+select '';
+
+-- (e) Airlines at each airport
+-- [insert sql statement(s) below]
+
+select distinct airports.airport, airlines.airline
+FROM
+flights
+LEFT JOIN airports ON flights.origin_airport= airports.airport_code
+LEFT JOIN airlines ON flights.airline= airlines.airline_code
+order by airports.airport, airlines.airline asc
+limit 30;
+
+select '';
+
+-- (f) Percentage of delayed flights
+-- [insert sql statement(s) below]
+
+select A.airport, (A.myCount*100.0/ B.totalNum) as percentage FROM
+(select airports.airport as airport, flights.destination_airport as destination_airport, count(*) as myCount
+FROM
+flights
+INNER JOIN airports ON flights.destination_airport = airports.airport_code
+where
+flights.arrival_delay > 30 
+group by flights.destination_airport
+order by airports.airport asc
+limit 20) as A
+JOIN (select count(*) as totalNum, flights.destination_airport as destination_airport
+from flights 
+group by flights.destination_airport) 
+as B on A.destination_airport = B.destination_airport;
+
+
+select '';
+
+-- (g) Creating a view
+-- [insert sql statement(s) below]
+
+create view airport_distance as
+select 
+A.airport_1, B.airport_2, (A.latitude_1 - B.latitude_2)*(A.latitude_1 - B.latitude_2) as distance
+From
+(select airports.airport as airport_1, airports.latitude as latitude_1, rowid as myID from airports) as A
+JOIN
+(select airports.airport as airport_2, airports.latitude as latitude_2, rowid as myID from airports) as B
+on A.myID > B.myID;
+
+select airport_1, airport_2, distance from airport_distance
+order by distance desc
+limit 10;
+
+select '';
+
+
+-- (h) Count total pairs 
+-- [insert sql statement(s) below]
+
+select count(*) from airport_distance;
+
+select '';
+
+-- (i) Create and import data into FTS table movie_overview.
+-- [insert sql statement(s) below]
+
+create virtual table movie_overview USING fts3(id integer, name text, year integer, overview text, popularity decimal);
+.separator ","
+.import movie-overview.txt movie_overview
+
+
+
+
+-- (i) part 1
+-- [insert sql statement(s) below]
+select count(*) from movie_overview
+where overview like 'when %';
+
+
+select '';
+
+-- (i) part 2
+-- [insert sql statement(s) below]
+select id from movie_overview
+where overview match 'love NEAR/7 hate';

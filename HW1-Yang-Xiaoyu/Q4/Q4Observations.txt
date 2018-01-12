@@ -1,0 +1,7 @@
+919
+value.toDate('yy-mm-dd').datePart("weekday")+', '+value.toDate('yy-mm-dd').toString()
+nominal data: 'architecturalstyletypeid'     ordinal data: 'buildingqualitytypeid'
+if(toNumber(value) > 3,"true","false")
+value.chomp("*")
+For 'garagecarcnt' column, many cells have values greater that 0 when the value for related 'garagetotalsfgt' column equals to 0. It doesn't make sense that a house have a garage when the total number of square feet of all garage equal to 0. To avoid this situation, I modify all the data in 'garagecarcnt' to 0 when the value in 'garagetotalsfgt' equals to 0. 
+if(toNumber(cells["garagetotalsqft"].value)<1,0,value)
